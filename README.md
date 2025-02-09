@@ -58,6 +58,11 @@ pip install pefile
 ![d](https://github.com/user-attachments/assets/16421140-f4bf-4e8b-a975-3f7548bf6b24)
 
 
+# 如有合作开发免杀工具，请向我联系
+# 我所在的社交平台：
+Telegram: t.me/Anonfsocialize
+QQ：663680370
+
 
 
 
