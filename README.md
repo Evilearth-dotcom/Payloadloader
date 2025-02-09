@@ -6,10 +6,10 @@ msfvenom将恶意payload注入到合法的文件当中
 
 
 
- [+] Payloadloader v2.0
- [+] Author: Anonfsocialize
- [+] Telegram: t.me/Anonfsocialize
- [+] Github: https://github.com/TR1123
+# [+] Payloadloader v2.0
+# [+] Author: Anonfsocialize
+# [+] Telegram: t.me/Anonfsocialize
+# [+] Github: https://github.com/TR1123
 
 ## usage: Payloadloader.exe [-h] -e EXE -o OUTPUT [-x XOR] [-r]
 
