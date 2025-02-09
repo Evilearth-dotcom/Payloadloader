@@ -5,6 +5,26 @@
 msfvenom将恶意payload注入到合法的文件当中
 
 
+
+ [+] Payloadloader v2.0
+ [+] Author: Anonfsocialize
+ [+] Telegram: t.me/Anonfsocialize
+ [+] Github: https://github.com/TR1123
+
+## usage: Payloadloader.exe [-h] -e EXE -o OUTPUT [-x XOR] [-r]
+
+## Payload loader...
+
+## options:
+  -h, --help            show this help message and exit
+  -e EXE, --exe EXE     要注入的exe文件路径
+  -o OUTPUT, --output OUTPUT
+                        输出exe文件路径
+  -x XOR, --xor XOR     XOR加密密钥,默认123
+  -r, --show_log        显示执行过程的日志
+
+
+
 ## 安装库
 如果您是Linux系统以下命令：
 sudo apt-get install python3-tk
@@ -39,23 +59,6 @@ pip install pefile
 
 
 
-### [+] Payloadloader v2.0
-### [+] Author: Anonfsocialize
-### [+] Telegram: t.me/Anonfsocialize
-### [+] Github: https://github.com/TR1123
-
-
-## usage: Payloadloader.exe [-h] -e EXE -o OUTPUT [-x XOR] [-r]
-
-## Payload loader...
-
-## options:
-  -h, --help            show this help message and exit
-  -e EXE, --exe EXE     要注入的exe文件路径
-  -o OUTPUT, --output OUTPUT
-                        输出exe文件路径
-  -x XOR, --xor XOR     XOR加密密钥,默认123
-  -r, --show_log        显示执行过程的日志
 
 
 
