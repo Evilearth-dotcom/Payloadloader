@@ -10,8 +10,7 @@ sudo apt-get install python3-tk
 pip install colorama
 pip install pefile
 
-
-## 
+### 
   ,---.                                 ,--.            ,--.                  ,--.
  /  O  \  ,--,--,   ,---.  ,--,--,      `--' ,--,--,    `--'  ,---.   ,---. ,-'  '-.
 |  .-.  | |      \ | .-. | |      \     ,--. |      \   ,--. | .-. : | .--' '-.  .-'
@@ -36,7 +35,7 @@ options:
   -x XOR, --xor XOR     XOR加密密钥,默认123
   -r, --show_log        显示执行过程的日志
 
-
+###
 
 
 
