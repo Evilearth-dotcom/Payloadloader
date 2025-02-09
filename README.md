@@ -10,13 +10,7 @@ sudo apt-get install python3-tk
 pip install colorama
 pip install pefile
 
-### 
-  ,---.                                 ,--.            ,--.                  ,--.
- /  O  \  ,--,--,   ,---.  ,--,--,      `--' ,--,--,    `--'  ,---.   ,---. ,-'  '-.
-|  .-.  | |      \ | .-. | |      \     ,--. |      \   ,--. | .-. : | .--' '-.  .-'
-|  | |  | |  ||  | ' '-' ' |  ||  |     |  | |  ||  |   |  | \   --. \ `--.   |  |
-`--' `--' `--''--'  `---'  `--''--'     `--' `--''--' .-'  /  `----'  `---'   `--'
-                                                      '---'
+
 [+] Payloadloader v2.0
 [+] Author: Anonfsocialize
 [+] Telegram: t.me/Anonfsocialize
