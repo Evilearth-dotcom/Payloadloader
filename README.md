@@ -10,6 +10,36 @@ sudo apt-get install python3-tk
 pip install colorama
 pip install pefile
 
+
+## 
+  ,---.                                 ,--.            ,--.                  ,--.
+ /  O  \  ,--,--,   ,---.  ,--,--,      `--' ,--,--,    `--'  ,---.   ,---. ,-'  '-.
+|  .-.  | |      \ | .-. | |      \     ,--. |      \   ,--. | .-. : | .--' '-.  .-'
+|  | |  | |  ||  | ' '-' ' |  ||  |     |  | |  ||  |   |  | \   --. \ `--.   |  |
+`--' `--' `--''--'  `---'  `--''--'     `--' `--''--' .-'  /  `----'  `---'   `--'
+                                                      '---'
+[+] Payloadloader v2.0
+[+] Author: Anonfsocialize
+[+] Telegram: t.me/Anonfsocialize
+[+] Github: https://github.com/TR1123
+
+
+usage: Payloadloader.exe [-h] -e EXE -o OUTPUT [-x XOR] [-r]
+
+Payload loader...
+
+options:
+  -h, --help            show this help message and exit
+  -e EXE, --exe EXE     要注入的exe文件路径
+  -o OUTPUT, --output OUTPUT
+                        输出exe文件路径
+  -x XOR, --xor XOR     XOR加密密钥,默认123
+  -r, --show_log        显示执行过程的日志
+
+
+
+
+
 ## 以下是使用Payloadloader加密过的效果图 
 1.未加密：
 
