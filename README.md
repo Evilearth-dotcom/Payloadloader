@@ -1,7 +1,9 @@
 # Payloadloader
 ## 免杀加载器
 
-使用python3编写的加密工具
+使用python3编写的加密工具,思路诞生于
+msfvenom将恶意payload注入到合法的文件当中
+
 
 ## 安装库
 如果您是Linux系统以下命令：
@@ -9,6 +11,20 @@ sudo apt-get install python3-tk
 如果您是windows系统以下命令：
 pip install colorama
 pip install pefile
+
+
+
+
+## 前提 
+1.你需要一个合法的PE文件，其中含有数字签名，没有也可以，使用工具 Payloadloader.py -e 病毒或木马 -o 合法的PE文件 -x 123 -r  
+
+2.加密过程中切勿退出，关闭程序否则会加密失败同时可能会导致合法文件失效
+
+## 其它语言的PE文件是否有效？
+
+1.经过测试我分别使用了易语言PE文件和GoPE文件经过Payloadloader.py程序加密处理可以达到混淆效果
+
+2.但是有一些加密后的PE文件可以绕过主流查毒软件 
 
 
 ### [+] Payloadloader v2.0
@@ -31,19 +47,6 @@ pip install pefile
 
 
 
-## 前提 
-1.你需要一个合法的PE文件，其中含有数字签名，没有也可以，使用工具 Payloadloader.py -e 病毒或木马 -o 合法的PE文件 -x 123 -r  
-
-2.加密过程中切勿退出，关闭程序否则会加密失败同时可能会导致合法文件失效
-
-## 其它语言的PE文件是否有效？
-
-1.经过测试我分别使用了易语言PE文件和GoPE文件经过Payloadloader.py程序加密处理可以达到混淆效果
-
-2.但是有一些加密后的PE文件可以绕过主流查毒软件 
-
-
-
 ## 以下是使用Payloadloader加密过的效果图 
 1.未加密：
 
@@ -58,5 +61,3 @@ pip install pefile
 
 
 
-
-思路在于msfvenom将恶意payload注入到合法的文件当中
