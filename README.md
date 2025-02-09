@@ -8,7 +8,7 @@ msfvenom将恶意payload注入到合法的文件当中
 
 # [+] Payloadloader v2.0
 # [+] Author: Anonfsocialize
-# [+] Telegram: t.me/Anonfsocialize
+# [+] Telegram: (https://t.me/Anonfsocialize)
 # [+] Github: https://github.com/TR1123
 
 ## usage: Payloadloader.exe [-h] -e EXE -o OUTPUT [-x XOR] [-r]
@@ -60,7 +60,7 @@ pip install pefile
 
 # 如有合作开发免杀工具，请向我联系
 # 我所在的社交平台：
-Telegram: t.me/Anonfsocialize
+Telegram: (https://t.me/Anonfsocialize)
 QQ：663680370
 
 
