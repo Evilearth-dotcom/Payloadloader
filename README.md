@@ -27,6 +27,18 @@ pip install pefile
 2.但是有一些加密后的PE文件可以绕过主流查毒软件 
 
 
+
+## 以下是使用Payloadloader加密过的效果图 
+1.未加密：
+
+![A8594AFE8496D9A814F306FFD5E71DDB](https://github.com/user-attachments/assets/75fe9a7d-c168-4ca5-938f-f460b298c839)
+
+2.已加密：
+
+![d](https://github.com/user-attachments/assets/16421140-f4bf-4e8b-a975-3f7548bf6b24)
+
+
+
 ### [+] Payloadloader v2.0
 ### [+] Author: Anonfsocialize
 ### [+] Telegram: t.me/Anonfsocialize
@@ -44,20 +56,6 @@ pip install pefile
                         输出exe文件路径
   -x XOR, --xor XOR     XOR加密密钥,默认123
   -r, --show_log        显示执行过程的日志
-
-
-
-## 以下是使用Payloadloader加密过的效果图 
-1.未加密：
-
-![A8594AFE8496D9A814F306FFD5E71DDB](https://github.com/user-attachments/assets/75fe9a7d-c168-4ca5-938f-f460b298c839)
-
-2.已加密：
-
-![d](https://github.com/user-attachments/assets/16421140-f4bf-4e8b-a975-3f7548bf6b24)
-
-
-
 
 
 
