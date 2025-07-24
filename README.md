@@ -4,6 +4,7 @@
 使用python3编写的加密工具,思路诞生于
 msfvenom将恶意payload注入到合法的文件当中
 
+<img width="1271" height="500" alt="ED615AC474C87AF6B28B9F783CB7E7C4" src="https://github.com/user-attachments/assets/2d708e33-9ffa-4977-9933-abc4d0c93d72" />
 
 
 # [+] Payloadloader v2.0
