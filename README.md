@@ -1,37 +1,27 @@
-# Payloadloader
-## 免杀加载器
 
-使用python3编写的加密工具,思路诞生于
-msfvenom将恶意payload注入到合法的文件当中
+
+```
+   ___                 __                __   __                __           
+  / _ \ ___ _  __ __  / / ___  ___ _ ___/ /  / / ___  ___ _ ___/ / ___   ____
+ / ___// _ `/ / // / / / / _ \/ _ `// _  /  / / / _ \/ _ `// _  / / -_) / __/
+/_/    \_,_/  \_, / /_/  \___/\_,_/ \_,_/  /_/  \___/\_,_/ \_,_/  \__/ /_/   
+             /___/
+                                                     
+[Version： 2.0]
+
+```
+
+3. **联系**
+   - Telegram: https://t.me/AnonAPT1
+   - Session：054b4fc8d298d5e28d6b5f9e449da38734d92b90915c418ddddb18bed7d5a7015f
+
+
+
 
 <img width="1271" height="500" alt="ED615AC474C87AF6B28B9F783CB7E7C4" src="https://github.com/user-attachments/assets/2d708e33-9ffa-4977-9933-abc4d0c93d72" />
 
 
-# [+] Payloadloader v2.0
-# [+] Author: Anonfsocialize
-# [+] Telegram: (https://t.me/Anonfsocialize)
-# [+] Github: https://github.com/TR1123
 
-## usage: Payloadloader.exe [-h] -e EXE -o OUTPUT [-x XOR] [-r]
-
-## Payload loader...
-
-## options:
-  -h, --help            show this help message and exit
-  -e EXE, --exe EXE     要注入的exe文件路径
-  -o OUTPUT, --output OUTPUT
-                        输出exe文件路径
-  -x XOR, --xor XOR     XOR加密密钥,默认123
-  -r, --show_log        显示执行过程的日志
-
-
-
-## 安装库
-如果您是Linux系统以下命令：
-sudo apt-get install python3-tk
-如果您是windows系统以下命令：
-pip install colorama
-pip install pefile
 
 
 
