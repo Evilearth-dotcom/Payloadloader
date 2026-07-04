@@ -6,24 +6,46 @@
  / ___// _ `/ / // / / / / _ \/ _ `// _  /  / / / _ \/ _ `// _  / / -_) / __/
 /_/    \_,_/  \_, / /_/  \___/\_,_/ \_,_/  /_/  \___/\_,_/ \_,_/  \__/ /_/   
              /___/
+
                                                      
 [Version： 2.0]
-
 ```
 
-3. **联系**
+**联系我**
    - Telegram: https://t.me/AnonAPT1
    - Session：054b4fc8d298d5e28d6b5f9e449da38734d92b90915c418ddddb18bed7d5a7015f
 
 
 
+## 新UI界面
+
+<img width="858" height="709" alt="屏幕截图 2026-07-04 161901" src="https://github.com/user-attachments/assets/fc197441-099a-4bd9-9d01-c22219d9c3cd" />
+
+
+
+## 安装
+
+```bash
+git clone https://github.com/Evilearth-dotcom/Payloadloader.git
+```
+
+```bash
+cd Payloadloader
+```
+
+```bash
+pip install pyqt5 pefile cryptography
+```
+
+## 运行
+
+```bash
+python Payloadloader.py
+```
+
+
 
 <img width="1271" height="500" alt="ED615AC474C87AF6B28B9F783CB7E7C4" src="https://github.com/user-attachments/assets/2d708e33-9ffa-4977-9933-abc4d0c93d72" />
-
-
-
-
-
 
 
 ## 前提 
