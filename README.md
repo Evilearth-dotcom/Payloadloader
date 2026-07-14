@@ -18,8 +18,10 @@
 
 
 ## 新UI界面
+## 添加了随机密钥生成
 
-<img width="858" height="709" alt="屏幕截图 2026-07-04 161901" src="https://github.com/user-attachments/assets/fc197441-099a-4bd9-9d01-c22219d9c3cd" />
+<img width="857" height="707" alt="屏幕截图 2026-07-14 164138" src="https://github.com/user-attachments/assets/866628b8-a7aa-492a-9a31-898292b6d58c" />
+
 
 
 
